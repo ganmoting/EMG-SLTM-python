@@ -48,7 +48,7 @@
 - `data`: 数据集文件夹，strain为训练集，val为测试集，`model_bo_com1.py`为从串口读入EMG信号
 - `xx2xx.py`：命名规则为xx2yy，作用为将文件从xx格式转为yy格式
 - `train_shanghweiji.py`：作用为创建一个可视化界面，使代码更加易懂
-  
+  ![模式识别训练上位机](test/0379543d173e56d2f6b33c09e46c66a.png)
 ## 贡献
 
 欢迎提交问题和合并请求。telephone：+86 13389947952
