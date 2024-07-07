@@ -1,26 +1,32 @@
-# EMG动作识别上位机
 
-这个项目是一个基于Python的EMG(肌电图)动作识别上位机程序。它能够实时采集EMG信号,进行滤波处理,并利用预训练的深度学习模型进行动作识别。
 
-## 功能特点
+# EMG Action Recognition Upper Computer
 
-- 实时EMG信号采集和显示
-- 信号滤波处理
-- 基于LSTM的动作识别
-- 直观的图形用户界面
-- 动作识别结果实时显示和历史记录
+This project is a Python-based upper computer program for EMG (Electromyography) action recognition. It can real-time collect EMG signals, perform filtering, and utilize a pretrained deep learning model for action recognition.
 
-## 技术栈
+![Pattern recognition training upper computer](test/7ac0a7f9a7262d5185a2f7b9bb3fd76.png)
+
+![Pattern recognition training upper computer](test/e21d7785afc1c6f7ab478c9102e746d.png)
+
+## Key Features
+
+- Real-time EMG signal collection and display
+- Signal filtering
+- Action recognition based on LSTM
+- Intuitive graphical user interface
+- Real-time display of action recognition results and historical records
+
+## Technology Stack
 
 - Python 3.8
-- PyQt5: 用于构建图形用户界面
-- PyQtGraph: 用于实时数据可视化
-- PySerial: 用于串口通信
-- NumPy: 用于数值计算
-- SciPy: 用于信号处理
-- PyTorch: 用于深度学习模型
+- PyQt5: For building the graphical user interface
+- PyQtGraph: For real-time data visualization
+- PySerial: For serial communication
+- NumPy: For numerical computing
+- SciPy: For signal processing
+- PyTorch: For deep learning models
 
-## 安装
+## Installation
 
 1. `pip install PyQt5`
 2. `pip install PySerial`
@@ -28,27 +34,27 @@
 4. `pip install NumPy`
 5. `pip install SciPy`
 6. `pip install PyTorch`
-  
-## 使用方法
 
-1. 运行主程序:
-2. 在界面上选择正确的串口并点击"打开串口"
-3. 观察实时EMG信号和滤波后的信号
-4. 查看动作识别结果和历史记录
+## Usage
 
-## 项目结构
+1. Run the main program:
+2. Select the correct serial port on the interface and click "Open Serial Port"
+3. Observe real-time EMG signals and filtered signals
+4. View action recognition results and historical records
 
-- `new1_shangweiji.py`: 主程序入口
-- `train3_best.py`: SLTM训练模型
-- `signal_processing.py`: 信号处理函数
-- `train_shangweiji.py`: 图形用户界面定义
-- `emg_classifier.pth`: 预训练模型权重
-  
-  ## 文件结构
-- `data`: 数据集文件夹，strain为训练集，val为测试集，`model_bo_com1.py`为从串口读入EMG信号
-- `xx2xx.py`：命名规则为xx2yy，作用为将文件从xx格式转为yy格式
-- `train_shanghweiji.py`：作用为创建一个可视化界面，使代码更加易懂
+## Project Structure
+
+- `new1_shangweiji.py`: Main program entry point
+- `train3_best.py`: LSTM model training
+- `signal_processing.py`: Signal processing functions
+- `train_shangweiji.py`: Graphical user interface definition
+- `emg_classifier.pth`: Pretrained model weights
   ![模式识别训练上位机](test/0379543d173e56d2f6b33c09e46c66a.png)
-## 贡献
+  ![模式识别训练上位机](test/815eebdcc6af66670ad318891cc8d24.png)
+  ![模式识别训练上位机](test/8604311dde7f3d41c2b2f2e82b8f816.png)
 
-欢迎提交问题和合并请求。telephone：+86 13389947952
+## Contribution
+
+Feel free to submit issues and pull requests.
+
+
