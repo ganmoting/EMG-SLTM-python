@@ -55,6 +55,6 @@ This project is a Python-based upper computer program for EMG (Electromyography)
 
 ## Contribution
 
-Feel free to submit issues and pull requests.
+Feel free to submit issues and pull requests.telephone：+86 13389947952
 
 
