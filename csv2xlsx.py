@@ -1,7 +1,7 @@
 import pandas as pd
 
 # 读取CSV文件
-csv_file = 'test/jidian1.csv'
+csv_file = 'data/strain/sheet2_3.csv'
 
 # 加载CSV文件数据
 data = pd.read_csv(csv_file)

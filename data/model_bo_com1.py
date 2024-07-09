@@ -17,7 +17,8 @@ def main():
     ser = serial.Serial('COM5', 115200, timeout=1)
 
     # 读取CSV文件中的数据
-    data = read_csv_data('E:\demo\data\strain\stest1.csv')
+    data = read_csv_data('E:\demo\data\strain\struth.csv')
+    #data = read_csv_data('E:\demo\data\strain\sheet2_3.csv')
 
     try:
         # 使用itertools.cycle来循环数据

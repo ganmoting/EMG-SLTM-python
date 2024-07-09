@@ -36,9 +36,7 @@ class EMGDataset(Dataset):
     def __init__(self, csv_file, label):
         self.data = np.genfromtxt(csv_file, delimiter=',')
         self.label = label
-        #self.cycle_length = 10000
-        #训练集切割每100切一次
-        self.cycle_length = 100
+        self.cycle_length = 200
 
     def __len__(self):
         return len(self.data) // self.cycle_length
@@ -108,9 +106,9 @@ class EMGThread(QThread):
         super().__init__()
         self.serial_port = serial_port
         self.running = False
-        self.buffer = np.zeros(1000)
-        self.filtered_buffer = np.zeros(1000)
-        self.timestamps = np.zeros(1000)
+        self.buffer = np.zeros(500)
+        self.filtered_buffer = np.zeros(500)
+        self.timestamps = np.zeros(500)
 
         # 加载预训练模型
         self.model = EMGClassifier(input_size=1, hidden_size=128, num_layers=4, output_size=1)
@@ -125,9 +123,9 @@ class EMGThread(QThread):
     def run(self):
         self.running = True
         self.start_time = QDateTime.currentDateTime().toMSecsSinceEpoch()
-        self.buffer = np.zeros(1000)
-        self.filtered_buffer = np.zeros(1000)
-        self.timestamps = np.zeros(1000)
+        self.buffer = np.zeros(500)
+        self.filtered_buffer = np.zeros(500)
+        self.timestamps = np.zeros(500)
 
         while self.running:
             if self.serial_port.inWaiting() > 0:
@@ -150,17 +148,10 @@ class EMGThread(QThread):
         self.running = False
         self.timer.stop()
 
-#    def process_data(self):
-#        if len(self.filtered_buffer) == 1000:
-#           # 确保我们使用的是最新的1000个采样点
-#            data_for_prediction = self.filtered_buffer[-1000:].reshape(-1, 1)
-#            action, confidence = self.predict_action(data_for_prediction)
-#            timestamp = QDateTime.currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz")
-#            self.action_updated.emit(action, confidence, timestamp)
     def process_data(self):
-        if len(self.buffer) >= 200:
-            # 使用的最新1000个采样点
-            data_for_prediction = self.buffer[-100:].reshape(-1, 1)
+        if len(self.buffer) >=200:
+            # 使用的最新200个采样点
+            data_for_prediction = self.buffer[-200:].reshape(-1, 1)
             action, confidence = self.predict_action(data_for_prediction)
             timestamp = QDateTime.currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz")
             self.action_updated.emit(action, confidence, timestamp)
@@ -224,7 +215,7 @@ class MainWindow(QMainWindow):
         self.train_plot = MplCanvas(self, width=5, height=4, dpi=100)
         layout.addWidget(self.train_plot)
 
-        # 训练历史记录
+        # 显示训练历史记录
         self.history_text = QTextEdit()
         self.history_text.setReadOnly(True)
         layout.addWidget(self.history_text)
@@ -234,111 +225,102 @@ class MainWindow(QMainWindow):
 
         # 串口选择
         serial_layout = QHBoxLayout()
-        self.serial_combo = QComboBox()
-        serial_layout.addWidget(QLabel("串口:"))
-        serial_layout.addWidget(self.serial_combo)
-        self.refresh_button = QPushButton("刷新")
-        self.refresh_button.clicked.connect(self.refresh_serial_ports)
-        serial_layout.addWidget(self.refresh_button)
-        self.open_button = QPushButton("打开串口")
-        self.open_button.clicked.connect(self.open_serial_port)
-        serial_layout.addWidget(self.open_button)
+        self.serial_label = QLabel("选择串口：")
+        self.serial_combobox = QComboBox()
+        self.serial_combobox.addItems(["COM3", "COM4", "COM5", "COM6", "COM7"])
+        self.serial_button = QPushButton("连接")
+        self.serial_button.clicked.connect(self.connect_serial)
+        serial_layout.addWidget(self.serial_label)
+        serial_layout.addWidget(self.serial_combobox)
+        serial_layout.addWidget(self.serial_button)
         layout.addLayout(serial_layout)
 
-        # 原始EMG信号显示
-        self.raw_emg_plot= pg.PlotWidget()
-        self.raw_emg_plot.setYRange(-3000, 3000)
-        self.raw_emg_plot.setLabel('left', '原始EMG信号')
-        self.raw_plot_curve = self.raw_emg_plot.plot(pen='y')
-        layout.addWidget(self.raw_emg_plot)
+        # 实时数据显示
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setBackground('w')
+        self.curve = self.plot_widget.plot(pen='b', name='EMG信号')
+        layout.addWidget(self.plot_widget)
 
-        # 滤波后EMG信号显示
-        self.filtered_emg_plot = pg.PlotWidget()
-        self.filtered_emg_plot.setYRange(-3000, 3000)
-        self.filtered_emg_plot.setLabel('left', '滤波后EMG信号')
-        self.raw_plot_curve = self.filtered_emg_plot.plot(pen='g')
-        layout.addWidget(self.filtered_emg_plot)
-
-        # 动作识别结果显示
-        self.result_text = QTextEdit()
-        self.result_text.setReadOnly(True)
-        layout.addWidget(QLabel("识别结果:"))
-        layout.addWidget(self.result_text)
+        # 实时显示预测动作和置信度
+        self.action_label = QLabel("动作：")
+        self.confidence_label = QLabel("置信度：")
+        self.timestamp_label = QLabel("时间戳：")
+        layout.addWidget(self.action_label)
+        layout.addWidget(self.confidence_label)
+        layout.addWidget(self.timestamp_label)
 
     def load_dataset1(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "选择训练集1(握手)文件", "", "CSV Files (*.csv);;All Files (*)", options=options)
-        if file_name:
-            self.dataset1 = EMGDataset(file_name, label=0)
-            self.check_datasets()
-            self.history_text.append(f"训练集1已导入")
-            self.history_text.append(f"请导入训练集2")
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "选择训练集1(握手)文件", "", "CSV Files (*.csv)")
+        if file_path:
+            self.dataset1 = EMGDataset(file_path, label=0)
+            self.history_text.append(f"已加载训练集1: {file_path}")
+            if self.dataset2:
+                self.start_button.setEnabled(True)
 
     def load_dataset2(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "选择训练集2(举手)文件", "", "CSV Files (*.csv);;All Files (*)", options=options)
-        if file_name:
-            self.dataset2 = EMGDataset(file_name, label=1)
-            self.check_datasets()
-            self.history_text.append(f"训练集2已导入")
-
-    def check_datasets(self):
-        if self.dataset1 and self.dataset2:
-            self.start_button.setEnabled(True)
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "选择训练集2(举手)文件", "", "CSV Files (*.csv)")
+        if file_path:
+            self.dataset2 = EMGDataset(file_path, label=1)
+            self.history_text.append(f"已加载训练集2: {file_path}")
+            if self.dataset1:
+                self.start_button.setEnabled(True)
 
     def start_training(self):
-        if self.dataset1 and self.dataset2:
-            combined_dataset = torch.utils.data.ConcatDataset([self.dataset1, self.dataset2])
-            train_loader = DataLoader(combined_dataset, batch_size=32, shuffle=True)
-            self.train_thread = TrainThread(train_loader)
-            self.train_thread.update_signal.connect(self.update_loss)
-            self.train_thread.finished_signal.connect(self.training_finished)
-            self.train_thread.update_plot_signal.connect(self.update_train_plot)
-            self.train_thread.start()
-            self.history_text.append("开始训练...")
+        if self.dataset1 is None or self.dataset2 is None:
+            self.history_text.append("请先加载训练集")
+            return
+
+        combined_dataset = torch.utils.data.ConcatDataset([self.dataset1, self.dataset2])
+        train_loader = DataLoader(combined_dataset, batch_size=32, shuffle=True)
+        self.train_thread = TrainThread(train_loader)
+        self.train_thread.update_signal.connect(self.update_loss)
+        self.train_thread.finished_signal.connect(self.training_finished)
+        self.train_thread.update_plot_signal.connect(self.update_plot)
+        self.train_thread.start()
+        self.history_text.append("开始训练...")
 
     def update_loss(self, loss):
-        self.history_text.append(f"当前损失: {loss:.4f}")
+        self.history_text.append(f"训练损失: {loss:.4f}")
 
     def training_finished(self):
         self.history_text.append("训练完成!")
 
-    def update_train_plot(self, losses):
+    def update_plot(self, losses):
         self.train_plot.axes.clear()
         self.train_plot.axes.plot(losses)
         self.train_plot.draw()
 
-    def refresh_serial_ports(self):
-        ports = ["COM" + str(i) for i in range(1, 10)]  # 这里假设串口号在1到9之间
-        self.serial_combo.clear()
-        self.serial_combo.addItems(ports)
+    def connect_serial(self):
+        port_name = self.serial_combobox.currentText()
+        try:
+            self.serial_port = serial.Serial(port_name, 9600, timeout=1)
+            self.history_text.append(f"已连接到串口 {port_name}")
+            self.serial_button.setEnabled(False)
 
-    def open_serial_port(self):
-        port_name = self.serial_combo.currentText()
-        if self.serial_port is None:
-            self.serial_port = serial.Serial(port_name, baudrate=115200, timeout=1)
+            # 启动EMG线程
             self.emg_thread = EMGThread(self.serial_port)
-            self.emg_thread.data_updated.connect(self.update_emg_plots)
-            self.emg_thread.action_updated.connect(self.update_action_result)
+            self.emg_thread.data_updated.connect(self.update_plot_data)
+            self.emg_thread.action_updated.connect(self.update_action)
             self.emg_thread.start()
-            self.open_button.setText("关闭串口")
-        else:
+        except Exception as e:
+            self.history_text.append(f"连接串口失败: {str(e)}")
+
+    def update_plot_data(self, raw_data, filtered_data, timestamps):
+        self.curve.setData(timestamps, raw_data)
+
+    def update_action(self, action, confidence, timestamp):
+        self.action_label.setText(f"动作: {action}")
+        self.confidence_label.setText(f"置信度: {confidence:.2f}")
+        self.timestamp_label.setText(f"时间戳: {timestamp}")
+
+    def closeEvent(self, event):
+        if self.emg_thread and self.emg_thread.running:
             self.emg_thread.stop()
-            self.serial_port.close()
-            self.serial_port = None
-            self.open_button.setText("打开串口")
+        event.accept()
 
-    def update_emg_plots(self, raw_data, filtered_data, timestamps):
-        self.raw_emg_plot.clear()
-        self.filtered_emg_plot.clear()
-        self.raw_emg_plot.plot(timestamps, raw_data)
-        self.filtered_emg_plot.plot(timestamps, filtered_data)
-        self.raw_plot_curve.setData(timestamps, raw_data)
-
-    def update_action_result(self, action, confidence, timestamp):
-        self.result_text.append(f"{timestamp} - 动作: {action}, 置信度: {confidence:.2f}")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
